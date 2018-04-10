@@ -67,6 +67,8 @@ type Options struct {
 
 	// The maximum time to wait for a response to any message
 	TMsgTimeout time.Duration
+
+	messageCodec messageCodec
 }
 
 // NewDHT initializes a new DHT node. A store and options struct must be
@@ -83,7 +85,7 @@ func NewDHT(store Store, options *Options) (*DHT, error) {
 
 	dht.store = store
 	dht.ht = ht
-	dht.networking = &realNetworking{}
+	dht.networking = NewRealNetwork(options)
 
 	store.Init()
 

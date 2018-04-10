@@ -49,6 +49,7 @@ type realNetworking struct {
 	self          *NetworkNode
 	msgCounter    int64
 	remoteAddress string
+	messageCodec  messageCodec
 }
 
 type expectedResponse struct {
@@ -56,6 +57,20 @@ type expectedResponse struct {
 	query *message
 	node  *NetworkNode
 	id    int64
+}
+
+func NewRealNetwork(options *Options) (rn *realNetworking) {
+	var codec *gobCodec
+
+	if options.messageCodec == nil {
+		codec = &gobCodec{}
+	}
+
+	rn = &realNetworking{
+		messageCodec: codec,
+	}
+
+	return rn
 }
 
 func (rn *realNetworking) init(self *NetworkNode) {
@@ -156,7 +171,7 @@ func (rn *realNetworking) sendMessage(msg *message, expectResponse bool, id int6
 		return nil, err
 	}
 
-	data, err := serializeMessage(msg)
+	data, err := rn.messageCodec.serialize(msg)
 	if err != nil {
 		return nil, err
 	}
@@ -225,7 +240,7 @@ func (rn *realNetworking) listen() error {
 		go func(conn net.Conn) {
 			for {
 				// Wait for messages
-				msg, err := deserializeMessage(conn)
+				msg, err := rn.messageCodec.deserialize(conn)
 				if err != nil {
 					if err.Error() == "EOF" {
 						// Node went bye bye
