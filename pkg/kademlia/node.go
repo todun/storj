@@ -12,11 +12,9 @@ type NetworkNode struct {
 	// ID is a 20 byte unique identifier
 	ID []byte
 
-	// IP is the IPv4 address of the node
-	IP net.IP
-
-	// Port is the port of the node
-	Port int
+	// Addr.IP is the IPv4 address of the node
+	// Addr.Port is the port of the node
+	Addr net.TCPAddr
 }
 
 // node represents a node in the network locally
@@ -30,8 +28,10 @@ type node struct {
 func NewNetworkNode(ip string, port string) *NetworkNode {
 	p, _ := strconv.Atoi(port)
 	return &NetworkNode{
-		IP:   net.ParseIP(ip),
-		Port: p,
+		Addr: net.TCPAddr{
+			IP:   net.ParseIP(ip),
+			Port: p,
+		},
 	}
 }
 
@@ -63,10 +63,10 @@ func areNodesEqual(n1 *NetworkNode, n2 *NetworkNode, allowNilID bool) bool {
 			return false
 		}
 	}
-	if !n1.IP.Equal(n2.IP) {
+	if !n1.Addr.IP.Equal(n2.Addr.IP) {
 		return false
 	}
-	if n1.Port != n2.Port {
+	if n1.Addr.Port != n2.Addr.Port {
 		return false
 	}
 	return true

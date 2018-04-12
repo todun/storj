@@ -210,13 +210,13 @@ func (dht *DHT) CreateSocket() error {
 	netMsgInit()
 	dht.networking.init(dht.ht.Self)
 
-	publicHost, publicPort, err := dht.networking.createSocket(ip, port, dht.options.UseStun, dht.options.StunAddr)
+	publicAddr, err := dht.networking.createSocket(ip, port, dht.options.UseStun, dht.options.StunAddr)
 	if err != nil {
 		return err
 	}
 
 	if dht.options.UseStun {
-		dht.ht.setSelfAddr(publicHost, publicPort)
+		dht.ht.setSelfAddr(*publicAddr)
 	}
 
 	return nil

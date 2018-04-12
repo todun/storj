@@ -70,10 +70,16 @@ func newHashTable(options *Options) (*hashTable, error) {
 		return nil, errors.New("Port and IP required")
 	}
 
-	err := ht.setSelfAddr(options.IP, options.Port)
+	intPort, err := strconv.Atoi(options.Port)
+	addr := net.TCPAddr{
+		IP: net.ParseIP(options.IP),
+		Port: intPort,
+	}
 	if err != nil {
 		return nil, err
 	}
+
+	ht.setSelfAddr(addr)
 
 	for i := 0; i < b; i++ {
 		ht.resetRefreshTimeForBucket(i)
@@ -86,14 +92,8 @@ func newHashTable(options *Options) (*hashTable, error) {
 	return ht, nil
 }
 
-func (ht *hashTable) setSelfAddr(ip string, port string) error {
-	ht.Self.IP = net.ParseIP(ip)
-	p, err := strconv.Atoi(port)
-	if err != nil {
-		return err
-	}
-	ht.Self.Port = p
-	return nil
+func (ht *hashTable) setSelfAddr(addr net.TCPAddr) {
+	ht.Self.Addr = addr
 }
 
 func (ht *hashTable) resetRefreshTimeForBucket(bucket int) {

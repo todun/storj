@@ -23,7 +23,7 @@ type networking interface {
 	timersFin()
 	getDisconnect() chan (int)
 	init(self *NetworkNode)
-	createSocket(host string, port string, useStun bool, stunAddr string) (publicHost string, publicPort string, err error)
+	createSocket(host string, port string, useStun bool, stunAddr string) (publicAddr *net.TCPAddr, err error)
 	listen() error
 	disconnect() error
 	cancelResponse(*expectedResponse)
@@ -112,18 +112,18 @@ func (rn *realNetworking) timersFin() {
 	rn.dcTimersChan <- 1
 }
 
-func (rn *realNetworking) createSocket(host string, port string, useStun bool, stunAddr string) (publicHost string, publicPort string, err error) {
+func (rn *realNetworking) createSocket(host string, port string, useStun bool, stunAddr string) (publicAddr *net.TCPAddr, err error) {
 	rn.mutex.Lock()
 	defer rn.mutex.Unlock()
 	if rn.connected {
-		return "", "", errors.New("already connected")
+		return nil, errors.New("already connected")
 	}
 
 	remoteAddress := "[" + host + "]" + ":" + port
 
 	socket, err := utp.NewSocket("udp", remoteAddress)
 	if err != nil {
-		return "", "", err
+		return nil, err
 	}
 
 	if useStun {
@@ -135,12 +135,12 @@ func (rn *realNetworking) createSocket(host string, port string, useStun bool, s
 
 		_, h, err := c.Discover()
 		if err != nil {
-			return "", "", err
+			return nil, err
 		}
 
 		_, err = c.Keepalive()
 		if err != nil {
-			return "", "", err
+			return nil, err
 		}
 
 		host = h.IP()
@@ -154,7 +154,16 @@ func (rn *realNetworking) createSocket(host string, port string, useStun bool, s
 
 	rn.socket = socket
 
-	return host, port, nil
+	var intPort int
+	if intPort, err = strconv.Atoi(port); err != nil {
+
+	}
+
+	addr := &net.TCPAddr{
+		IP: net.ParseIP(host),
+		Port: intPort,
+	}
+	return addr, nil
 }
 
 func (rn *realNetworking) sendMessage(msg *message, expectResponse bool, id int64) (*expectedResponse, error) {
@@ -166,7 +175,7 @@ func (rn *realNetworking) sendMessage(msg *message, expectResponse bool, id int6
 	msg.ID = id
 	rn.mutex.Unlock()
 
-	conn, err := rn.socket.DialTimeout("["+msg.Receiver.IP.String()+"]:"+strconv.Itoa(msg.Receiver.Port), time.Second)
+	conn, err := rn.socket.DialTimeout("["+msg.Receiver.Addr.IP.String()+"]:"+strconv.Itoa(msg.Receiver.Addr.Port), time.Second)
 	if err != nil {
 		return nil, err
 	}
