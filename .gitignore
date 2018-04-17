@@ -14,5 +14,11 @@
 # Output of the go coverage tool, specifically when used with LiteIDE
 *.out
 
+# Default compiled binary
+main
+
+# BoltDB
+*.db
+
 # Generated protobuf files
 *.pb.go

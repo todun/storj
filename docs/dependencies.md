@@ -38,4 +38,11 @@ These are only suggestions based on previous experience and our goals with this 
 
 [zeebo](https://github.com/zeebo/errs)
 
+### Linter
+[gometalinter.v2](gopkg.in/alecthomas/gometalinter.v2)
 
+```
+go get -u gopkg.in/alecthomas/gometalinter.v2
+gometalinter --install
+make lint
+```
