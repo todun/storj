@@ -75,15 +75,17 @@ message Pointer {
 
 // PutRequest is a request message for the Put rpc call
 message PutRequest {
-  bytes path = 1;
-  Pointer pointer = 2;
-  bytes APIKey = 3;
+  string bucket = 1;
+  bytes path = 2;
+  Pointer pointer = 3;
+  bytes APIKey = 4;
 }
 
 // GetRequest is a request message for the Get rpc call
 message GetRequest {
-  bytes path = 1;
-  bytes APIKey = 2;
+  string bucket = 1;
+  bytes path = 2;
+  bytes APIKey = 3;
 }
 
 // ListRequest is a request message for the List rpc call
@@ -109,8 +111,9 @@ message ListResponse {
 }
 
 message DeleteRequest {
-  bytes path = 1;
-  bytes APIKey = 2;
+  string bucket = 1;
+  bytes path = 2;
+  bytes APIKey = 3;
 }
 
 // DeleteResponse is a response message for the Delete rpc call

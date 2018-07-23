@@ -23,13 +23,13 @@ type PointerDB struct {
 	grpcClient pb.PointerDBClient
 }
 
-// Client services offerred for the interface
+// Client defines the methods for interacting with a pointerdb client
 type Client interface {
-	Put(ctx context.Context, path p.Path, pointer *pb.Pointer, APIKey []byte) error
-	Get(ctx context.Context, path p.Path, APIKey []byte) (*pb.Pointer, error)
-	List(ctx context.Context, startingPathKey []byte, limit int64, APIKey []byte) (
+	Put(ctx context.Context, bucket string, path p.Path, pointer *pb.Pointer, APIKey []byte) error
+	Get(ctx context.Context, bucket string, path p.Path, APIKey []byte) (*pb.Pointer, error)
+	List(ctx context.Context, bucket string, startingPath []byte, limit int64, APIKey []byte) (
 		paths []byte, truncated bool, err error)
-	Delete(ctx context.Context, path p.Path, APIKey []byte) error
+	Delete(ctx context.Context, bucket string, path p.Path, APIKey []byte) error
 }
 
 // NewClient initializes a new pointerdb client
@@ -54,20 +54,20 @@ func clientConnection(serverAddr string, opts ...grpc.DialOption) (pb.PointerDBC
 	return pb.NewPointerDBClient(conn), nil
 }
 
-// Put is the interface to make a PUT request, needs Pointer and APIKey
-func (pdb *PointerDB) Put(ctx context.Context, path p.Path, pointer *pb.Pointer, APIKey []byte) (err error) {
+// Put makes a request to put a pointer at a given path in the pointerdb
+func (pdb *PointerDB) Put(ctx context.Context, b string, path p.Path, pointer *pb.Pointer, APIKey []byte) (err error) {
 	defer mon.Task()(&ctx)(&err)
 
-	_, err = pdb.grpcClient.Put(ctx, &pb.PutRequest{Path: path.Bytes(), Pointer: pointer, APIKey: APIKey})
+	_, err = pdb.grpcClient.Put(ctx, &pb.PutRequest{Bucket: b, Path: path.Bytes(), Pointer: pointer, APIKey: APIKey})
 
 	return err
 }
 
-// Get is the interface to make a GET request, needs PATH and APIKey
-func (pdb *PointerDB) Get(ctx context.Context, path p.Path, APIKey []byte) (pointer *pb.Pointer, err error) {
+// Get makes a request to get a pointer from a given path in the pointerdb
+func (pdb *PointerDB) Get(ctx context.Context, b string, path p.Path, APIKey []byte) (pointer *pb.Pointer, err error) {
 	defer mon.Task()(&ctx)(&err)
 
-	res, err := pdb.grpcClient.Get(ctx, &pb.GetRequest{Path: path.Bytes(), APIKey: APIKey})
+	res, err := pdb.grpcClient.Get(ctx, &pb.GetRequest{Bucket: b, Path: path.Bytes(), APIKey: APIKey})
 	if err != nil {
 		return nil, err
 	}
@@ -78,10 +78,10 @@ func (pdb *PointerDB) Get(ctx context.Context, path p.Path, APIKey []byte) (poin
 	return pointer, nil
 }
 
-// List is the interface to make a LIST request, needs StartingPathKey, Limit, and APIKey
-func (pdb *PointerDB) List(ctx context.Context, startingPathKey p.Path, limit int64, APIKey []byte) (paths [][]byte, truncated bool, err error) {
+// List makes a request for a list of paths from the pointerdb, given a starting path and a specific limit
+func (pdb *PointerDB) List(ctx context.Context, startingPath p.Path, limit int64, APIKey []byte) (paths [][]byte, truncated bool, err error) {
 	defer mon.Task()(&ctx)(&err)
-	res, err := pdb.grpcClient.List(ctx, &pb.ListRequest{StartingPathKey: startingPathKey.Bytes(), Limit: limit, APIKey: APIKey})
+	res, err := pdb.grpcClient.List(ctx, &pb.ListRequest{StartingPathKey: startingPath.Bytes(), Limit: limit, APIKey: APIKey})
 
 	if err != nil {
 		return nil, false, err
@@ -90,11 +90,11 @@ func (pdb *PointerDB) List(ctx context.Context, startingPathKey p.Path, limit in
 	return res.Paths, res.Truncated, nil
 }
 
-// Delete is the interface to make a Delete request, needs Path and APIKey
-func (pdb *PointerDB) Delete(ctx context.Context, path p.Path, APIKey []byte) (err error) {
+// Delete makes a request to delete a path and pointer from the pointerdb
+func (pdb *PointerDB) Delete(ctx context.Context, b string, path p.Path, APIKey []byte) (err error) {
 	defer mon.Task()(&ctx)(&err)
 
-	_, err = pdb.grpcClient.Delete(ctx, &pb.DeleteRequest{Path: path.Bytes(), APIKey: APIKey})
+	_, err = pdb.grpcClient.Delete(ctx, &pb.DeleteRequest{Bucket: b, Path: path.Bytes(), APIKey: APIKey})
 
 	return err
 }
